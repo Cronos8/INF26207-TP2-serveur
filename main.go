@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
 func convertFileToBytes(file string) []byte {
@@ -67,49 +68,69 @@ func main() {
 	fmt.Printf("Listening on : %s\n", name)
 
 	//s := "Hello Client ofjsdogsog sdyufsdug dfhsdgfifhieufhiw sdhfjjjjjjj dddd"
-	str := ""
+	//str := ""
 	//fileByte := []byte(s)
 	//sendPacketTest(fileByte, 7)
 
 	//fileByte := convertFileToBytes("Alpacas.jpeg")
-	//fileByte := convertFileToBytes("test.jpg")
-	fileByte := convertFileToBytes("test2.pdf")
+	fileByte := convertFileToBytes("alpaga.jpeg")
+	//fileByte := convertFileToBytes("test2.pdf")
 
 	i := 0
 	size := 1000
 
 	buff := make([]byte, 1000)
 	buff2 := make([]byte, size)
-	for {
-		//buff := make([]byte, 1000)
+	lastbuff := buff2
 
-		n, conn, err := listener.ReadFrom(buff)
+	for {
+		n, co, err := listener.ReadFrom(buff)
+		fmt.Println(string(buff))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Fatal error ", err.Error())
+			fmt.Fprintf(os.Stderr, "Fatal Error ", err.Error())
 			continue
 		}
+		if string(buff[:n]) == "Client - CONNEXION OK" {
+			listener.WriteTo([]byte("Serveur - CONNEXION OK"), co)
+			break
+		}
+	}
 
-		fmt.Println("-------------------------")
+	listener.SetReadDeadline(time.Now().Add(3 * time.Second))
+	for {
+		//buff := make([]byte, 1000)
+		n, conn, err := listener.ReadFrom(buff)
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			fmt.Fprintf(os.Stderr, "Timeout Error \n", err.Error())
+			listener.WriteTo(lastbuff, conn)
+			log.Println("Packet re-sent")
+		} else if err != nil {
+			fmt.Fprintf(os.Stderr, "Fatal Error ", err.Error())
+			continue
+		} else {
 
-		log.Printf("Receive : %s\n", string(buff[:n]))
-		if string(buff[:n]) == "OK" {
-			if i+size > len(fileByte) {
-				buff2 = fileByte[i:]
-				str = string(buff2)
-				listener.WriteTo([]byte(str), conn)
-				log.Println("Final packet sent")
+			fmt.Println("-------------------------")
+
+			log.Printf("Receive : %s\n", string(buff[:n]))
+			if string(buff[:n]) == "OK" {
+				if i+size > len(fileByte) {
+					buff2 = fileByte[i:]
+					listener.WriteTo(buff2, conn)
+					log.Println("Final packet sent")
+					//log.Printf("Send : %s\n", str)
+					break
+				}
+				buff2 = fileByte[i : i+size]
+				listener.WriteTo(buff2, conn)
+				log.Println("Packet sent")
 				//log.Printf("Send : %s\n", str)
-				break
 			}
-			buff2 = fileByte[i : i+size]
-			str = string(buff2)
-			listener.WriteTo([]byte(str), conn)
-			log.Println("Packet sent")
-			//log.Printf("Send : %s\n", str)
+
+			fmt.Println("-------------------------")
+			i = i + size
+			lastbuff = buff2
+			listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 		}
 
-		fmt.Println("-------------------------")
-		//handleClient(conn)
-		i = i + size
 	}
 }
