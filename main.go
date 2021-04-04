@@ -93,6 +93,28 @@ func isTimeOutError(err error) int {
 	return 0
 }
 
+func decapPacket(packet []byte) (uint64, []byte) {
+	buffnbpacket := packet[:8]
+	buffbody := packet[8:]
+	nbPacket := binary.LittleEndian.Uint64(buffnbpacket)
+
+	return nbPacket, buffbody
+}
+
+func printPacket(packet []byte) {
+	nbPacket, bodyPacket := decapPacket(packet)
+	log.Printf("Packet nb : %v\n", nbPacket)
+
+	log.Println("Packet entier")
+	getByteSignature(bodyPacket)
+
+	log.Println("numero Packet")
+	getByteSignature(bodyPacket[:8])
+
+	log.Println("corp du Packet")
+	getByteSignature(bodyPacket[8:])
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Fprintf(os.Stderr, "Usage: %s ip-addr\n", os.Args[0])
@@ -102,7 +124,7 @@ func main() {
 
 	listener, err := net.ListenPacket("udp4", name)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Fatal error ", err.Error())
+		fmt.Fprintf(os.Stderr, "Fatal error : %s\n", err.Error())
 		os.Exit(1)
 	}
 	defer listener.Close()
@@ -110,15 +132,10 @@ func main() {
 	fmt.Println("-------------------------")
 	fmt.Printf("Listening on : %s\n", name)
 
-	//fileByte := convertFileToBytes("Alpacas.jpeg")
-	fileByte := convertFileToBytes("test.jpg")
-	//fileByte := convertFileToBytes("test2.pdf")
-
+	fileByte := convertFileToBytes("alpaga.jpeg")
 	i := 0
 	size := 1000
-
 	buff := make([]byte, 1000)
-	//buff2 := make([]byte, size)
 	buff2 := make([]byte, 1024)
 	var lastPacketConn net.Addr
 	lastbuff := make([]byte, 1024)
@@ -128,33 +145,23 @@ func main() {
 	if newClientConnexion(listener) == 0 {
 		listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 		for terminated == false {
-			//buff := make([]byte, 1000)
 			n, conn, err := listener.ReadFrom(buff)
-			//fmt.Println(n)
 			switch e := isTimeOutError(err); e {
 			case 1:
-				_, err3 := listener.WriteTo(lastbuff, lastPacketConn)
-				if err3 != nil {
-					//fmt.Println(conn.Network())
-					//fmt.Println(conn.String())
-					fmt.Println("error1")
-					fmt.Println(err3)
+				_, err2 := listener.WriteTo(lastbuff, lastPacketConn)
+				if err2 != nil {
+					fmt.Println(err2)
 				}
-
 				log.Println("RENVOIE PACKET")
-				log.Println("Packet entier")
-				getByteSignature(lastbuff)
-				log.Println("numero Packet")
-				getByteSignature(lastbuff[:8])
-				log.Println("corp du Packet")
-				getByteSignature(lastbuff[8:])
+				printPacket(lastbuff)
 				log.Println("Packet re-sent")
 				listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 				break
+
 			case -1:
-				fmt.Println("erro3")
 				fmt.Println(e)
-				continue
+				break
+
 			case 0:
 				fmt.Println("-------------------------")
 
@@ -163,47 +170,26 @@ func main() {
 					if (string(buff[:n]) == "PACKAGE RECEIVE") || (string(buff[:n]) == "READY TO RECEIVE") {
 						if i+size > len(fileByte) {
 							buff2 = encapPacket(nbPacket, fileByte[i:])
-							//buff2 = fileByte[i:]
 							listener.WriteTo(buff2, conn)
 							log.Println("Final packet sent")
-							log.Printf("Packet nb : %v\n", nbPacket)
-							getByteSignature(buff2)
-							log.Println("numero Packet")
-							getByteSignature(buff2[:8])
-							log.Println("corp du Packet")
-							getByteSignature(buff2[8:])
-							//log.Printf("Send : %s\n", str)
+							printPacket(buff2)
+
 							listener.WriteTo([]byte("END"), conn)
 							getFileByteSignature(fileByte)
 							terminated = true
 							break
 						}
 						buff2 = encapPacket(nbPacket, fileByte[i:i+size])
-						//buff2 = fileByte[i : i+size]
 						listener.WriteTo(buff2, conn)
 						log.Println("Packet sent")
-						log.Printf("Packet nb : %v\n", nbPacket)
-						log.Println("Packet entier")
-						getByteSignature(buff2)
-						log.Println("numero Packet")
-						getByteSignature(buff2[:8])
-						log.Println("corp du Packet")
-						getByteSignature(buff2[8:])
-
+						printPacket(buff2)
 						nbPacket++
-						//log.Printf("Send : %s\n", str)
 					}
 
 					fmt.Println("-------------------------")
 					i = i + size
 					lastbuff = buff2
-					//copy(lastbuff, buff2)
 					lastPacketConn = conn
-					fmt.Println("************************")
-					getByteSignature(lastbuff)
-					getByteSignature(buff2)
-					fmt.Println("************************")
-					//lastbuff = buff2
 					listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 
 				} else {
