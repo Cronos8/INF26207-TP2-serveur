@@ -46,8 +46,8 @@ func convertBytesToFile(name string, bytesArr []byte, perm int) {
 	}
 }
 
-func getByteSignature(packet []byte) {
-	log.Printf("Packet signature : %x\n", sha1.Sum(packet))
+func getByteSignature(packet []byte) [20]byte {
+	return sha1.Sum(packet)
 }
 
 func getFileSignature(file string) {
@@ -102,27 +102,35 @@ func decapPacket(packet []byte) (uint64, []byte) {
 }
 
 func printPacket(packet []byte) {
+
 	nbPacket, bodyPacket := decapPacket(packet)
-	log.Printf("Packet nb : %v\n", nbPacket)
 
-	log.Println("Packet entier")
-	getByteSignature(bodyPacket)
+	fmt.Println("************************************************")
+	fmt.Println()
 
-	log.Println("numero Packet")
-	getByteSignature(bodyPacket[:8])
+	fmt.Printf("[Packet N° : %v]\n", nbPacket)
+	fmt.Printf("Signature : %x\n", getByteSignature(packet))
+	fmt.Printf("Corp du Packet - Signature : %x\n", getByteSignature(bodyPacket[8:]))
 
-	log.Println("corp du Packet")
-	getByteSignature(bodyPacket[8:])
+	fmt.Println()
+	fmt.Println("************************************************")
+}
+
+func checkArguments(args []string) int {
+	if len(args) != 2 {
+		fmt.Fprintf(os.Stderr, "Usage: %s ip-addr\n", os.Args[0])
+		os.Exit(1)
+		return -1
+	}
+	return 0
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintf(os.Stderr, "Usage: %s ip-addr\n", os.Args[0])
-		os.Exit(1)
+	if checkArguments(os.Args) != 0 {
+		return
 	}
-	name := os.Args[1]
 
-	listener, err := net.ListenPacket("udp4", name)
+	listener, err := net.ListenPacket("udp4", os.Args[1])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Fatal error : %s\n", err.Error())
 		os.Exit(1)
@@ -130,31 +138,37 @@ func main() {
 	defer listener.Close()
 
 	fmt.Println("-------------------------")
-	fmt.Printf("Listening on : %s\n", name)
+	fmt.Printf("Listening on : %s\n", os.Args[1])
+	fmt.Println("-------------------------")
+	fmt.Println()
 
 	fileByte := convertFileToBytes("alpaga.jpeg")
 	i := 0
 	size := 1000
-	buff := make([]byte, 1000)
-	buff2 := make([]byte, 1024)
-	var lastPacketConn net.Addr
+	buffRead := make([]byte, 1000)
+	buffWrite := make([]byte, 1024)
 	lastbuff := make([]byte, 1024)
 	terminated := false
+
+	var fiability float32 = 0.95
+	var lastPacketConn net.Addr
 	var nbPacket uint64 = 0
 
 	if newClientConnexion(listener) == 0 {
 		listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 		for terminated == false {
-			n, conn, err := listener.ReadFrom(buff)
+			n, conn, err := listener.ReadFrom(buffRead)
 			switch e := isTimeOutError(err); e {
 			case 1:
 				_, err2 := listener.WriteTo(lastbuff, lastPacketConn)
 				if err2 != nil {
 					fmt.Println(err2)
 				}
+				fmt.Println("-------------------------")
 				log.Println("RENVOIE PACKET")
 				printPacket(lastbuff)
-				log.Println("Packet re-sent")
+				fmt.Println("-------------------------")
+				fmt.Println()
 				listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 				break
 
@@ -163,37 +177,48 @@ func main() {
 				break
 
 			case 0:
-				fmt.Println("-------------------------")
 
-				log.Printf("Receive : %s\n", string(buff[:n]))
-				if sendPaquetWithFiability(0.95) == true {
-					if (string(buff[:n]) == "PACKAGE RECEIVE") || (string(buff[:n]) == "READY TO RECEIVE") {
+				fmt.Println("-------------------------")
+				log.Printf("Receive : %s\n", string(buffRead[:n]))
+				fmt.Println("-------------------------")
+				fmt.Println()
+
+				if sendPaquetWithFiability(fiability) == true {
+					if (string(buffRead[:n]) == "PACKAGE RECEIVE") || (string(buffRead[:n]) == "READY TO RECEIVE") {
 						if i+size > len(fileByte) {
-							buff2 = encapPacket(nbPacket, fileByte[i:])
-							listener.WriteTo(buff2, conn)
-							log.Println("Final packet sent")
-							printPacket(buff2)
+							buffWrite = encapPacket(nbPacket, fileByte[i:])
+							listener.WriteTo(buffWrite, conn)
+							fmt.Println("-------------------------")
+							log.Println("DERNIER PACKET")
+							printPacket(buffWrite)
+							fmt.Println("-------------------------")
+							fmt.Println()
 
 							listener.WriteTo([]byte("END"), conn)
 							getFileByteSignature(fileByte)
 							terminated = true
 							break
 						}
-						buff2 = encapPacket(nbPacket, fileByte[i:i+size])
-						listener.WriteTo(buff2, conn)
-						log.Println("Packet sent")
-						printPacket(buff2)
+						buffWrite = encapPacket(nbPacket, fileByte[i:i+size])
+						listener.WriteTo(buffWrite, conn)
+						fmt.Println("-------------------------")
+						log.Println("PACKET SEND")
+						printPacket(buffWrite)
+						fmt.Println("-------------------------")
+						fmt.Println()
 						nbPacket++
 					}
 
-					fmt.Println("-------------------------")
 					i = i + size
-					lastbuff = buff2
+					lastbuff = buffWrite
 					lastPacketConn = conn
 					listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 
 				} else {
+					fmt.Println("!!!!!!!!!!!!!!!!!!")
 					log.Println("Fiability Error")
+					fmt.Println("!!!!!!!!!!!!!!!!!!")
+					fmt.Println()
 				}
 			}
 		}
