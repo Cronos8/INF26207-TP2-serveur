@@ -30,7 +30,7 @@ func IsTimeOutError(err error) int {
 }
 
 // NewClientConnexion etablish a connexion with a client
-func NewClientConnexion(listener net.PacketConn) int {
+func NewClientConnexion(listener net.PacketConn) net.Addr {
 	buff := make([]byte, 1000)
 
 	listener.SetReadDeadline(time.Now().Add(5 * time.Minute))
@@ -38,16 +38,15 @@ func NewClientConnexion(listener net.PacketConn) int {
 		n, co, err := listener.ReadFrom(buff)
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			fmt.Fprintf(os.Stderr, "Timeout Error : %s\n", err.Error())
-			return -1
+			return nil
 		} else if err != nil {
 			fmt.Fprintf(os.Stderr, "Fatal Error : %s\n", err.Error())
 			continue
 		}
 		if string(buff[:n]) == "Client - CONNEXION OK" {
 			listener.WriteTo([]byte("Serveur - CONNEXION OK"), co)
-			break
+			log.Println("Connexion established")
+			return co
 		}
 	}
-	log.Println("Connexion established")
-	return 0
 }

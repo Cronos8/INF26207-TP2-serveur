@@ -21,9 +21,21 @@ func checkArguments(args []string) int {
 }
 
 func main() {
+
+	hpacket := packet.HeaderPacket{nil, 0, 0}
+
 	if checkArguments(os.Args) != 0 {
 		return
 	}
+
+	udpaddr, err := net.ResolveUDPAddr("udp4", os.Args[1])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Invalid UDP address...")
+		os.Exit(1)
+	}
+
+	hpacket.HeaderIp = udpaddr.IP
+	hpacket.HeaderPort = int32(udpaddr.Port)
 
 	// "testfiles/alpaga.jpeg"
 	fByte := filebyte.ConvertFileToBytes(os.Args[2])
@@ -35,6 +47,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Fatal error : %s\n", err.Error())
 		os.Exit(1)
 	}
+	fmt.Println(listener.LocalAddr().String())
 	defer listener.Close()
 
 	fmt.Println("------------------------------------------------")
@@ -43,23 +56,26 @@ func main() {
 	fmt.Println()
 
 	i := 0
-	size := 1000
+	//size := 1000
+	size := 996
 	buffRead := make([]byte, 1000)
 	buffWrite := make([]byte, 1024)
+	buffWrite2 := make([]byte, 1024)
 	lastbuff := make([]byte, 1024)
 	terminated := false
 
 	var fiability float32 = 0.95
-	var lastPacketConn net.Addr
 	var nbPacket uint64 = 0
 
-	if serverfunc.NewClientConnexion(listener) == 0 {
+	conn := serverfunc.NewClientConnexion(listener)
+	if conn != nil {
 		listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 		for terminated == false {
-			n, conn, err := listener.ReadFrom(buffRead)
+			n, _, err := listener.ReadFrom(buffRead)
+			fmt.Println(conn.String())
 			switch e := serverfunc.IsTimeOutError(err); e {
 			case 1:
-				_, err2 := listener.WriteTo(lastbuff, lastPacketConn)
+				_, err2 := listener.WriteTo(lastbuff, conn)
 				if err2 != nil {
 					fmt.Println(err2)
 				}
@@ -92,17 +108,28 @@ func main() {
 							terminated = true
 							break
 						}
+						fmt.Println("ORIGIN")
+						filebyte.GetFileByteSignature(fByte[i : i+size])
+						fmt.Println("ORIGIN")
 						buffWrite = packet.EncapPacket(nbPacket, fByte[i:i+size])
+
+						/////////////
+						buffWrite2 = packet.EncapPacket2(hpacket, fByte[i:i+size])
+						packet.DecapPacket2(buffWrite2)
+						/////////////
+
 						listener.WriteTo(buffWrite, conn)
 						packet.PrintMessage("PACKET SEND", packet.BlueColor)
 						packet.PrintPacket(buffWrite)
 						fmt.Println()
 						nbPacket++
+
+						/////////////
+						hpacket.HeaderNbPacket = nbPacket
 					}
 
 					i = i + size
 					lastbuff = buffWrite
-					lastPacketConn = conn
 					listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 
 				} else {
@@ -110,5 +137,8 @@ func main() {
 				}
 			}
 		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Server timeout ...")
+		os.Exit(1)
 	}
 }
