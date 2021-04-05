@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"time"
@@ -13,8 +12,8 @@ import (
 )
 
 func checkArguments(args []string) int {
-	if len(args) != 2 {
-		fmt.Fprintf(os.Stderr, "Usage: %s ip-addr\n", os.Args[0])
+	if len(args) != 3 {
+		fmt.Fprintf(os.Stderr, "Usage: %s ip-addr filepath\n", os.Args[0])
 		os.Exit(1)
 		return -1
 	}
@@ -26,6 +25,11 @@ func main() {
 		return
 	}
 
+	// "testfiles/alpaga.jpeg"
+	fByte := filebyte.ConvertFileToBytes(os.Args[2])
+	if fByte == nil {
+		os.Exit(1)
+	}
 	listener, err := net.ListenPacket("udp4", os.Args[1])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Fatal error : %s\n", err.Error())
@@ -33,12 +37,10 @@ func main() {
 	}
 	defer listener.Close()
 
-	fmt.Println("-------------------------")
+	fmt.Println("------------------------------------------------")
 	fmt.Printf("Listening on : %s\n", os.Args[1])
-	fmt.Println("-------------------------")
+	fmt.Println("------------------------------------------------")
 	fmt.Println()
-
-	fByte := filebyte.ConvertFileToBytes("testfiles/alpaga.jpeg")
 
 	i := 0
 	size := 1000
@@ -61,10 +63,8 @@ func main() {
 				if err2 != nil {
 					fmt.Println(err2)
 				}
-				fmt.Println("-------------------------")
-				log.Println("RENVOIE PACKET")
+				packet.PrintMessage("PACKET RE-SEND", packet.CyanColor)
 				packet.PrintPacket(lastbuff)
-				fmt.Println("-------------------------")
 				fmt.Println()
 				listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 				break
@@ -75,20 +75,16 @@ func main() {
 
 			case 0:
 
-				fmt.Println("-------------------------")
-				log.Printf("Receive : %s\n", string(buffRead[:n]))
-				fmt.Println("-------------------------")
-				fmt.Println()
+				packet.PrintMessage("MESSAGE RECEIVE", packet.GreenColor)
+				fmt.Printf("Content : %s\n", string(buffRead[:n]))
 
 				if serverfunc.SendPaquetWithFiability(fiability) == true {
 					if (string(buffRead[:n]) == "PACKAGE RECEIVE") || (string(buffRead[:n]) == "READY TO RECEIVE") {
 						if i+size > len(fByte) {
 							buffWrite = packet.EncapPacket(nbPacket, fByte[i:])
 							listener.WriteTo(buffWrite, conn)
-							fmt.Println("-------------------------")
-							log.Println("DERNIER PACKET")
+							packet.PrintMessage("LAST PACKET", packet.GreenColor)
 							packet.PrintPacket(buffWrite)
-							fmt.Println("-------------------------")
 							fmt.Println()
 
 							listener.WriteTo([]byte("END"), conn)
@@ -98,10 +94,8 @@ func main() {
 						}
 						buffWrite = packet.EncapPacket(nbPacket, fByte[i:i+size])
 						listener.WriteTo(buffWrite, conn)
-						fmt.Println("-------------------------")
-						log.Println("PACKET SEND")
+						packet.PrintMessage("PACKET SEND", packet.BlueColor)
 						packet.PrintPacket(buffWrite)
-						fmt.Println("-------------------------")
 						fmt.Println()
 						nbPacket++
 					}
@@ -112,10 +106,7 @@ func main() {
 					listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 
 				} else {
-					fmt.Println("!!!!!!!!!!!!!!!!!!")
-					log.Println("Fiability Error")
-					fmt.Println("!!!!!!!!!!!!!!!!!!")
-					fmt.Println()
+					packet.PrintMessage("FIABILITY ERROR", packet.RedColor)
 				}
 			}
 		}

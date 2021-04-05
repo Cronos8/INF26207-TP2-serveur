@@ -1,12 +1,12 @@
 package filebyte
 
 import (
+	"crypto/sha1"
+	"log"
 	"fmt"
 	"io/ioutil"
-	"crypto/sha1"
 	"os"
-	"log"
-)
+)	
 
 // ConvertFileToBytes convert file to byte
 func ConvertFileToBytes(file string) []byte {
@@ -40,5 +40,5 @@ func GetFileSignature(file string) {
 
 // GetFileByteSignature
 func GetFileByteSignature(fileByte []byte) {
-	log.Printf("File signature : %x\n", sha1.Sum(fileByte))
+	log.Printf("File signature : %x\n\n", sha1.Sum(fileByte))
 }
