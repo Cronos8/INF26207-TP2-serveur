@@ -12,47 +12,6 @@ import (
 	"github.com/Cronos8/INF26207-TP2-serveur/serverfunc"
 )
 
-/*func sendPaquetWithFiability(fiability float32) bool {
-	if rand.Float32() <= fiability {
-		return true
-	}
-	return false
-}
-
-func newClientConnexion(listener net.PacketConn) int {
-	buff := make([]byte, 1000)
-
-	listener.SetReadDeadline(time.Now().Add(5 * time.Minute))
-	for {
-		n, co, err := listener.ReadFrom(buff)
-		if e, ok := err.(net.Error); ok && e.Timeout() {
-			fmt.Fprintf(os.Stderr, "Timeout Error : %s\n", err.Error())
-			return -1
-		} else if err != nil {
-			fmt.Fprintf(os.Stderr, "Fatal Error : %s\n", err.Error())
-			continue
-		}
-
-		if string(buff[:n]) == "Client - CONNEXION OK" {
-			listener.WriteTo([]byte("Serveur - CONNEXION OK"), co)
-			break
-		}
-	}
-	log.Println("Connexion established")
-	return 0
-}*/
-
-/*func isTimeOutError(err error) int {
-	if e, ok := err.(net.Error); ok && e.Timeout() {
-		fmt.Fprintf(os.Stderr, "Timeout Error : %s\n", err.Error())
-		return 1
-	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "Fatal Error : %s\n", err.Error())
-		return -1
-	}
-	return 0
-}*/
-
 func checkArguments(args []string) int {
 	if len(args) != 2 {
 		fmt.Fprintf(os.Stderr, "Usage: %s ip-addr\n", os.Args[0])
