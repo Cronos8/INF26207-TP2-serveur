@@ -19,11 +19,7 @@ const (
 	ResetColor  ColorPrint = "\033[0m"
 	YellowColor ColorPrint = "\033[33m"
 	CyanColor   ColorPrint = "\033[36m"
-
-	/*
-		    colorPurple := "\033[35m"
-			colorWhite := "\033[37m"
-	*/
+	PurpleColor	ColorPrint = "\033[35m"
 )
 
 // HeaderPacket header of packet
@@ -66,7 +62,6 @@ func EncapPacket(hpacket HeaderPacket, packet []byte) []byte {
 
 	binary.LittleEndian.PutUint32(buffport, uint32(hpacket.HeaderPort))
 	binary.LittleEndian.PutUint64(buffnbpacket, hpacket.HeaderNbPacket)
-
 	bufftmp := []byte{}
 	bufftmp = append(bufftmp, buffnbpacket...)
 	bufftmp = append(bufftmp, buffip...)
@@ -115,7 +110,7 @@ func PrintPacket(p []byte) {
 
 	fmt.Printf("\t[Packet N° : %v]\n", hpacket.HeaderNbPacket)
 	fmt.Printf("\tSignature : %x\n", filebyte.GetByteSignature(p))
-	fmt.Printf("\tCorp du Packet - Signature : %x\n", filebyte.GetByteSignature(bodyPacket))
+	fmt.Printf("\tBody Packet - Signature : %x\n", filebyte.GetByteSignature(bodyPacket))
 
 	fmt.Println()
 	fmt.Printf("\t************************************************\n")

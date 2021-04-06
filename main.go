@@ -14,6 +14,7 @@ import (
 func checkArguments(args []string) int {
 	if len(args) != 3 {
 		fmt.Fprintf(os.Stderr, "Usage: %s ip-addr filepath\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Example: %s 127.0.0.1:22222 testfiles/alpagas.jpeg\n", os.Args[0])
 		os.Exit(1)
 		return -1
 	}
@@ -37,7 +38,6 @@ func main() {
 	hpacket.HeaderIp = udpaddr.IP
 	hpacket.HeaderPort = int32(udpaddr.Port)
 
-	// "testfiles/alpaga.jpeg"
 	fByte := filebyte.ConvertFileToBytes(os.Args[2])
 	if fByte == nil {
 		os.Exit(1)
@@ -47,9 +47,9 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Fatal error : %s\n", err.Error())
 		os.Exit(1)
 	}
-	fmt.Println(listener.LocalAddr().String())
 	defer listener.Close()
 
+	fmt.Println()
 	fmt.Println("------------------------------------------------")
 	fmt.Printf("Listening on : %s\n", os.Args[1])
 	fmt.Println("------------------------------------------------")
@@ -71,7 +71,6 @@ func main() {
 		listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 		for terminated == false {
 			n, _, err := listener.ReadFrom(buffRead)
-			//fmt.Println(conn.String())
 			switch e := serverfunc.IsTimeOutError(err); e {
 			case 1:
 				_, err2 := listener.WriteTo(lastbuff, conn)
@@ -89,7 +88,6 @@ func main() {
 				break
 
 			case 0:
-
 				packet.PrintMessage("MESSAGE RECEIVE", packet.GreenColor, conn.String())
 				fmt.Printf("Content : %s\n", string(buffRead[:n]))
 
@@ -98,7 +96,7 @@ func main() {
 						if i+size > len(fByte) {
 							buffWrite = packet.EncapPacket(hpacket, fByte[i:])
 							listener.WriteTo(buffWrite, conn)
-							packet.PrintMessage("LAST PACKET", packet.GreenColor, conn.String())
+							packet.PrintMessage("LAST PACKET", packet.PurpleColor, conn.String())
 							packet.PrintPacket(buffWrite)
 							fmt.Println()
 
@@ -127,7 +125,7 @@ func main() {
 			}
 		}
 	} else {
-		fmt.Fprintf(os.Stderr, "Server timeout ...")
+		fmt.Fprintf(os.Stderr, "Server timeout ...\n")
 		os.Exit(1)
 	}
 }
