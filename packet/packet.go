@@ -62,7 +62,7 @@ func EncapPacket(hpacket HeaderPacket, packet []byte) []byte {
 	buffport := make([]byte, 4)
 
 	buffip = []byte(hpacket.HeaderIp) // buffip len = 16 et non 4
-	fmt.Println(len(buffip))
+	
 
 	binary.LittleEndian.PutUint32(buffport, uint32(hpacket.HeaderPort))
 	binary.LittleEndian.PutUint64(buffnbpacket, hpacket.HeaderNbPacket)
@@ -96,11 +96,12 @@ func DecapPacket(packet []byte) (HeaderPacket, []byte) {
 }
 
 // PrintMessage print a message
-func PrintMessage(message string, color ColorPrint) {
+func PrintMessage(message string, color ColorPrint, destIP string) {
 	fmt.Println(string(color))
 	fmt.Println("-----------------------------------------")
 	log.Println(message)
-	fmt.Println("---------------------------------------------")
+	fmt.Println("Client addr : " + destIP)
+	fmt.Println("-----------------------------------------")
 	fmt.Println(string(ResetColor))
 }
 

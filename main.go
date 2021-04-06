@@ -30,7 +30,7 @@ func main() {
 
 	udpaddr, err := net.ResolveUDPAddr("udp4", os.Args[1])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid UDP address...")
+		fmt.Fprintf(os.Stderr, "Invalid IPv4 address...\n")
 		os.Exit(1)
 	}
 
@@ -78,7 +78,7 @@ func main() {
 				if err2 != nil {
 					fmt.Println(err2)
 				}
-				packet.PrintMessage("PACKET RE-SEND", packet.CyanColor)
+				packet.PrintMessage("PACKET RE-SEND", packet.CyanColor, conn.String())
 				packet.PrintPacket(lastbuff)
 				fmt.Println()
 				listener.SetReadDeadline(time.Now().Add(3 * time.Second))
@@ -90,7 +90,7 @@ func main() {
 
 			case 0:
 
-				packet.PrintMessage("MESSAGE RECEIVE", packet.GreenColor)
+				packet.PrintMessage("MESSAGE RECEIVE", packet.GreenColor, conn.String())
 				fmt.Printf("Content : %s\n", string(buffRead[:n]))
 
 				if serverfunc.SendPaquetWithFiability(fiability) == true {
@@ -98,7 +98,7 @@ func main() {
 						if i+size > len(fByte) {
 							buffWrite = packet.EncapPacket(hpacket, fByte[i:])
 							listener.WriteTo(buffWrite, conn)
-							packet.PrintMessage("LAST PACKET", packet.GreenColor)
+							packet.PrintMessage("LAST PACKET", packet.GreenColor, conn.String())
 							packet.PrintPacket(buffWrite)
 							fmt.Println()
 
@@ -110,7 +110,7 @@ func main() {
 						buffWrite = packet.EncapPacket(hpacket, fByte[i:i+size])
 
 						listener.WriteTo(buffWrite, conn)
-						packet.PrintMessage("PACKET SEND", packet.BlueColor)
+						packet.PrintMessage("PACKET SEND", packet.BlueColor, conn.String())
 						packet.PrintPacket(buffWrite)
 						fmt.Println()
 						nbPacket++
@@ -122,7 +122,7 @@ func main() {
 					listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 
 				} else {
-					packet.PrintMessage("FIABILITY ERROR", packet.RedColor)
+					packet.PrintMessage("FIABILITY ERROR", packet.RedColor, conn.String())
 				}
 			}
 		}
