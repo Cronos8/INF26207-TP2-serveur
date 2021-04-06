@@ -60,7 +60,6 @@ func main() {
 	size := 996
 	buffRead := make([]byte, 1000)
 	buffWrite := make([]byte, 1024)
-	buffWrite2 := make([]byte, 1024)
 	lastbuff := make([]byte, 1024)
 	terminated := false
 
@@ -72,7 +71,7 @@ func main() {
 		listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 		for terminated == false {
 			n, _, err := listener.ReadFrom(buffRead)
-			fmt.Println(conn.String())
+			//fmt.Println(conn.String())
 			switch e := serverfunc.IsTimeOutError(err); e {
 			case 1:
 				_, err2 := listener.WriteTo(lastbuff, conn)
@@ -97,7 +96,7 @@ func main() {
 				if serverfunc.SendPaquetWithFiability(fiability) == true {
 					if (string(buffRead[:n]) == "PACKAGE RECEIVE") || (string(buffRead[:n]) == "READY TO RECEIVE") {
 						if i+size > len(fByte) {
-							buffWrite = packet.EncapPacket(nbPacket, fByte[i:])
+							buffWrite = packet.EncapPacket(hpacket, fByte[i:])
 							listener.WriteTo(buffWrite, conn)
 							packet.PrintMessage("LAST PACKET", packet.GreenColor)
 							packet.PrintPacket(buffWrite)
@@ -108,23 +107,13 @@ func main() {
 							terminated = true
 							break
 						}
-						fmt.Println("ORIGIN")
-						filebyte.GetFileByteSignature(fByte[i : i+size])
-						fmt.Println("ORIGIN")
-						buffWrite = packet.EncapPacket(nbPacket, fByte[i:i+size])
-
-						/////////////
-						buffWrite2 = packet.EncapPacket2(hpacket, fByte[i:i+size])
-						packet.DecapPacket2(buffWrite2)
-						/////////////
+						buffWrite = packet.EncapPacket(hpacket, fByte[i:i+size])
 
 						listener.WriteTo(buffWrite, conn)
 						packet.PrintMessage("PACKET SEND", packet.BlueColor)
 						packet.PrintPacket(buffWrite)
 						fmt.Println()
 						nbPacket++
-
-						/////////////
 						hpacket.HeaderNbPacket = nbPacket
 					}
 
