@@ -19,7 +19,7 @@ const (
 	ResetColor  ColorPrint = "\033[0m"
 	YellowColor ColorPrint = "\033[33m"
 	CyanColor   ColorPrint = "\033[36m"
-	PurpleColor	ColorPrint = "\033[35m"
+	PurpleColor ColorPrint = "\033[35m"
 )
 
 // HeaderPacket header of packet
@@ -54,11 +54,9 @@ func DecapPacket2(packet []byte) (uint64, []byte) {
 func EncapPacket(hpacket HeaderPacket, packet []byte) []byte {
 
 	buffnbpacket := make([]byte, 8)
-	buffip := make([]byte, 16)
+	buffip := make([]byte, 4)
 	buffport := make([]byte, 4)
-
-	buffip = []byte(hpacket.HeaderIp) // buffip len = 16 et non 4
-	
+	buffip = []byte(hpacket.HeaderIp.To4())
 
 	binary.LittleEndian.PutUint32(buffport, uint32(hpacket.HeaderPort))
 	binary.LittleEndian.PutUint64(buffnbpacket, hpacket.HeaderNbPacket)
@@ -76,8 +74,8 @@ func DecapPacket(packet []byte) (HeaderPacket, []byte) {
 
 	buffnbpacket := packet[:8]
 	nbPacket := binary.LittleEndian.Uint64(buffnbpacket)
-	buffipacket := packet[8:24]
-	buffportpacket := packet[24:28]
+	buffipacket := packet[8:12]
+	buffportpacket := packet[12:16]
 	nbPort := binary.LittleEndian.Uint32(buffportpacket)
 
 	hpacket := HeaderPacket{
@@ -85,7 +83,7 @@ func DecapPacket(packet []byte) (HeaderPacket, []byte) {
 		int32(nbPort),
 		nbPacket,
 	}
-	buffbody := packet[28:]
+	buffbody := packet[16:]
 
 	return hpacket, buffbody
 }

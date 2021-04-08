@@ -56,8 +56,7 @@ func main() {
 	fmt.Println()
 
 	i := 0
-	//size := 1000
-	size := 996
+	size := 1000
 	buffRead := make([]byte, 1000)
 	buffWrite := make([]byte, 1024)
 	lastbuff := make([]byte, 1024)
