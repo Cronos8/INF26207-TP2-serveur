@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// SendPaquetWithFiability define fiability
+// SendPaquetWithFiability simule le pourcentage de fiabilité du serveur
 func SendPaquetWithFiability(fiability float32) bool {
 	if rand.Float32() <= fiability {
 		return true
@@ -17,7 +17,7 @@ func SendPaquetWithFiability(fiability float32) bool {
 	return false
 }
 
-// IsTimeOutError define if we have a timeout error
+// IsTimeOutError définit si nous avons une erreur de type "Timeout"
 func IsTimeOutError(err error) int {
 	if e, ok := err.(net.Error); ok && e.Timeout() {
 		fmt.Fprintf(os.Stderr, "Timeout Error : %s\n", err.Error())
@@ -29,7 +29,7 @@ func IsTimeOutError(err error) int {
 	return 0
 }
 
-// NewClientConnexion etablish a connexion with a client
+// NewClientConnexion établit une connexion avec le client
 func NewClientConnexion(listener net.PacketConn) net.Addr {
 	buff := make([]byte, 1000)
 
