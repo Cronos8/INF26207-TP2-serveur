@@ -6,7 +6,7 @@ Simulation d'un serveur UDP avec les sockets dans le cadre d'un travail pratique
 
 ### Pré-requis
 
-- Go v1.15.6
+- Go v1.16.3
 
 Testé sous :
 - macOS 11.2.3
