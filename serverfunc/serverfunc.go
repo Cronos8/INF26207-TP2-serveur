@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -27,6 +28,12 @@ func IsTimeOutError(err error) int {
 		return -1
 	}
 	return 0
+}
+
+// SendFileName récupère et envoi le nom du fichier
+func SendFileName(listener net.PacketConn, conn net.Addr, file string) {
+	tmpfile := "FILE " + filepath.Base(file)
+	listener.WriteTo([]byte(tmpfile), conn)
 }
 
 // NewClientConnexion établit une connexion avec le client

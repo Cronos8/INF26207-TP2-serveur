@@ -76,6 +76,8 @@ func main() {
 	// Établissement de la connexion au client
 	conn := serverfunc.NewClientConnexion(listener)
 	if conn != nil {
+		// Envoi le nom du fichier
+		serverfunc.SendFileName(listener, conn, os.Args[2])
 		// Mise en place d'un compteur de 3 secondes d'attente de recéption d'un méssage
 		listener.SetReadDeadline(time.Now().Add(3 * time.Second))
 		for terminated == false {
@@ -113,7 +115,7 @@ func main() {
 				if serverfunc.SendPaquetWithFiability(fiability) == true {
 
 					// Si le serveur reçoit l'accusé de réception du client
-					if (string(buffRead[:n]) == "PACKAGE RECEIVE") || (string(buffRead[:n]) == "READY TO RECEIVE") {
+					if (string(buffRead[:n]) == "PACKET RECEIVE") || (string(buffRead[:n]) == "READY TO RECEIVE") {
 
 						// Si il s'agit du dernier paquet à transmettre
 						if i+size > len(fByte) {
